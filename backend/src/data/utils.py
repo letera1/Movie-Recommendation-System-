@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 
 from pathlib import Path
-from .services.tmdb import get_movie_details, get_poster_url, get_placeholder_poster
+from src.services.tmdb import get_movie_details, get_poster_url, get_placeholder_poster
 
 
 # Constants
