@@ -60,32 +60,32 @@ async def list_movies(
 
 
 @router.get("/movies/search", response_model=SearchResponse)
-async def search_movies(
-    q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(20, ge=1, le=100, description="Max results")
+async def search_movies_endpoint(
+    query: Optional[str] = Query(None, min_length=1, description="Search query"),
+    genre: Optional[str] = Query(None, description="Filter by genre"),
+    year: Optional[int] = Query(None, description="Filter by year"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page")
 ):
-    """Search movies by title."""
+    """Search and filter movies with pagination."""
     if movies_df is None:
         raise HTTPException(status_code=503, detail="Data not loaded")
     
-    query_lower = q.lower()
-    mask = movies_df['title'].str.lower().str.contains(query_lower, na=False)
-    results = movies_df[mask].head(limit)
-    
-    movies_list = [
-        Movie(
-            id=int(row['movie_id']),
-            title=row['title'],
-            genres=row['genres'],
-            year=row['year']
-        )
-        for _, row in results.iterrows()
-    ]
+    search_results = search_movies(
+        movies_df=movies_df,
+        query=query,
+        genre=genre,
+        year=year,
+        page=page,
+        page_size=page_size
+    )
     
     return SearchResponse(
-        results=movies_list,
-        query=q,
-        total=len(movies_list)
+        results=[Movie(**m) for m in search_results['results']],
+        query=query or "",
+        count=search_results['total_results'],
+        page=search_results['page'],
+        total_pages=search_results['total_pages']
     )
 
 
