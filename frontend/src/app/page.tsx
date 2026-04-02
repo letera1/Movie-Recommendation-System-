@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { SearchBar, MovieGrid } from "@/components";
 import { getPopularMovies } from "@/lib/api";
-import type { Movie } from "@/types";
-import Image from "next/image";
+import type { Movie, Recommendation } from "@/types";
 
 export default function HomePage() {
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
@@ -16,8 +15,9 @@ export default function HomePage() {
       try {
         setIsLoading(true);
         const response = await getPopularMovies(12);
-        // Assuming the API returns a list of movies directly
-        setPopularMovies(response.movies);
+        // Extract movies from recommendations
+        const movies = (response.recommendations || []).map((rec: Recommendation) => rec.movie);
+        setPopularMovies(movies);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load movies");
         console.error("Error fetching popular movies:", err);
@@ -29,22 +29,13 @@ export default function HomePage() {
     fetchPopularMovies();
   }, []);
 
-  const heroMovie = popularMovies.length > 0 ? popularMovies[0] : null;
-
   return (
     <main className="bg-gray-900 text-white min-h-screen">
       {/* Hero Section */}
       <div className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center">
-        {heroMovie && heroMovie.backdrop_url && (
-          <Image
-            src={heroMovie.backdrop_url}
-            alt={`Backdrop for ${heroMovie.title}`}
-            fill
-            className="object-cover object-center opacity-30"
-            priority
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent" />
+        {/* Hero background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
 
         <div className="relative z-10 max-w-3xl mx-auto px-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">
@@ -61,12 +52,13 @@ export default function HomePage() {
       </div>
 
       {/* Popular Movies Section */}
-      <div className="-mt-16 relative z-20">
+      <div className="-mt-16 relative z-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {error ? (
           <div className="text-center py-12">
             <div className="bg-red-900/50 text-red-300 rounded-lg p-4 inline-block">
               <p className="font-medium">Error loading movies</p>
               <p className="text-sm mt-1">Could not connect to the backend.</p>
+              <p className="text-xs mt-2 text-red-400">Make sure the backend is running at http://localhost:8000</p>
             </div>
           </div>
         ) : (
