@@ -59,6 +59,14 @@ async def list_movies(
     )
 
 
+from ..utils import GENRES
+
+@router.get("/genres", response_model=List[str])
+async def get_genres():
+    """Get a list of all available movie genres."""
+    return GENRES
+
+
 @router.get("/movies/search", response_model=SearchResponse)
 async def search_movies_endpoint(
     query: Optional[str] = Query(None, min_length=1, description="Search query"),
