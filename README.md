@@ -147,7 +147,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Start server — auto-downloads MovieLens data and trains models on first run
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 > **First run:** The server automatically downloads the MovieLens 100K dataset and trains all models. This takes ~2 minutes and only happens once. Artifacts are cached in `backend/models/`.
