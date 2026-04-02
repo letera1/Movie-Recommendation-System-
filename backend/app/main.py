@@ -37,7 +37,8 @@ def _parse_csv_env(name: str, default: list[str]) -> list[str]:
     if not value:
         return default
     parsed = [item.strip() for item in value.split(",") if item.strip()]
-    return parsed or default
+    merged = default + parsed
+    return list(dict.fromkeys(merged)) or default
 
 
 ALLOWED_ORIGINS = _parse_csv_env(

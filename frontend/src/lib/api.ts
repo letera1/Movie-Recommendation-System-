@@ -10,42 +10,70 @@ import type {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+function getCandidateApiBases(): string[] {
+  const bases = [API_BASE];
+
+  if (API_BASE.includes("localhost")) {
+    bases.push(API_BASE.replace("localhost", "127.0.0.1"));
+  }
+
+  return Array.from(new Set(bases));
+}
+
 /**
  * Generic fetch wrapper with error handling
  */
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+  const apiBases = getCandidateApiBases();
+  let lastError: unknown;
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      cache: "no-store",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
-    });
+  for (const base of apiBases) {
+    const url = `${base}${endpoint}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
+    try {
+      const response = await fetch(url, {
+        ...options,
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+        },
+      });
 
-    return response.json();
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Request timeout. Please try again.");
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+        throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      lastError = error;
+
+      const isNetworkError = error instanceof TypeError;
+      const isTimeoutError = error instanceof DOMException && error.name === "AbortError";
+      const isLastCandidate = base === apiBases[apiBases.length - 1];
+
+      if (!isNetworkError || isLastCandidate) {
+        if (isTimeoutError) {
+          throw new Error("Request timeout. Please try again.");
+        }
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Network error occurred");
+      }
+    } finally {
+      clearTimeout(timeout);
     }
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Network error occurred");
-  } finally {
-    clearTimeout(timeout);
   }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+  throw new Error("Network error occurred");
 }
 
 /**
