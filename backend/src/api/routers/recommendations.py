@@ -3,7 +3,7 @@ API routes for movie recommendations.
 """
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional, List
-from ..schemas import (
+from src.api.schemas import (
     Movie, MovieDetail, Recommendation, RecommendationResponse,
     MovieListResponse, SearchResponse
 )
@@ -62,7 +62,7 @@ async def list_movies(
     )
 
 
-from ..utils import GENRES
+from src.data.utils import GENRES
 
 
 def search_movies(
