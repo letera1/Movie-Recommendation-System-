@@ -66,6 +66,13 @@ export async function searchMovies(
 }
 
 /**
+ * Get list of all movie genres
+ */
+export async function getGenres(): Promise<string[]> {
+  return fetchAPI<string[]>("/api/genres");
+}
+
+/**
  * Get movie details by ID
  */
 export async function getMovie(id: number): Promise<MovieDetail> {
