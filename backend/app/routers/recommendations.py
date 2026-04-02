@@ -150,7 +150,10 @@ async def get_collaborative_recommendations(
 ):
     """Get collaborative filtering recommendations for a user."""
     if collaborative_model is None:
-        raise HTTPException(status_code=503, detail="Collaborative model not loaded")
+        raise HTTPException(
+            status_code=503, 
+            detail="Collaborative filtering is not available. Install scikit-surprise to enable it."
+        )
     
     recommendations = collaborative_model.get_recommendations(user_id, n=n)
     
@@ -199,28 +202,36 @@ async def get_hybrid_recommendations(
     # Collaborative only
     elif user_id is not None and movie_id is None:
         if collaborative_model is None:
-            raise HTTPException(status_code=503, detail="Collaborative model not loaded")
+            raise HTTPException(
+                status_code=503, 
+                detail="Collaborative filtering is not available. Install scikit-surprise to enable it."
+            )
         
         recommendations = collaborative_model.get_recommendations(user_id, n=n)
         method = "collaborative"
     
     # Hybrid
     else:
-        if content_model is None or collaborative_model is None:
-            raise HTTPException(status_code=503, detail="Models not loaded")
+        if content_model is None:
+            raise HTTPException(status_code=503, detail="Content model not loaded")
         
-        # Get more recommendations from each model
+        # Get content recommendations
         content_recs = content_model.get_recommendations(movie_id, n=n*2)
-        collab_recs = collaborative_model.get_recommendations(user_id, n=n*2)
         
-        # Normalize scores and combine
-        recommendations = _combine_recommendations(
-            content_recs, 
-            collab_recs, 
-            content_weight=content_weight,
-            n=n
-        )
-        method = "hybrid"
+        # If collaborative model is available, combine; otherwise use content only
+        if collaborative_model is not None:
+            collab_recs = collaborative_model.get_recommendations(user_id, n=n*2)
+            recommendations = _combine_recommendations(
+                content_recs, 
+                collab_recs, 
+                content_weight=content_weight,
+                n=n
+            )
+            method = "hybrid"
+        else:
+            # Fall back to content-based only
+            recommendations = content_recs[:n]
+            method = "content"
     
     return RecommendationResponse(
         recommendations=[

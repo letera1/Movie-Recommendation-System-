@@ -49,16 +49,23 @@ async def lifespan(app: FastAPI):
         content_model.fit(movies_df)
         content_model.save(content_model_path)
     
-    # Initialize collaborative filtering model
-    collab_model_path = MODELS_DIR / "collaborative"
-    if collab_model_path.exists():
-        print("Loading saved collaborative model...")
-        collaborative_model = CollaborativeModel.load(collab_model_path)
-    else:
-        print("Training collaborative filtering model...")
-        collaborative_model = CollaborativeModel()
-        collaborative_model.fit(ratings_df, movies_df)
-        collaborative_model.save(collab_model_path)
+    # Initialize collaborative filtering model (optional - requires scikit-surprise)
+    collaborative_model = None
+    try:
+        collab_model_path = MODELS_DIR / "collaborative"
+        if collab_model_path.exists():
+            print("Loading saved collaborative model...")
+            collaborative_model = CollaborativeModel.load(collab_model_path)
+        else:
+            print("Training collaborative filtering model...")
+            collaborative_model = CollaborativeModel()
+            collaborative_model.fit(ratings_df, movies_df)
+            collaborative_model.save(collab_model_path)
+    except ImportError as e:
+        print(f"Warning: Collaborative filtering disabled - {e}")
+        print("To enable, install scikit-surprise: pip install scikit-surprise")
+    except Exception as e:
+        print(f"Warning: Could not load collaborative model - {e}")
     
     # Set models in router
     set_models(content_model, collaborative_model, movies_df, ratings_df)
