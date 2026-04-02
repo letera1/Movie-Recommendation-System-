@@ -28,3 +28,10 @@ def get_poster_url(poster_path: str, size: str = "w500"):
     if not poster_path:
         return None
     return f"https://image.tmdb.org/t/p/{size}{poster_path}"
+
+
+def get_placeholder_poster(movie_id: int, title: str) -> str:
+    """Generate a placeholder poster URL when TMDB is not available."""
+    import urllib.parse
+    encoded_title = urllib.parse.quote(title[:20])
+    return f"https://placehold.co/300x450/1f2937/f3f4f6?text={encoded_title}"

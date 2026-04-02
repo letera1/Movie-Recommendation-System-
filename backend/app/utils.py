@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 
 from pathlib import Path
-from .services.tmdb import get_movie_details, get_poster_url
+from .services.tmdb import get_movie_details, get_poster_url, get_placeholder_poster
 
 
 # Constants
@@ -90,7 +90,7 @@ def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
             tmdb_data.append({
                 'movie_id': row['movie_id'],
                 'overview': '',
-                'poster_url': None,
+                'poster_url': get_placeholder_poster(row['movie_id'], row['title']),
                 'backdrop_url': None
             })
             continue
@@ -103,14 +103,14 @@ def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
             tmdb_data.append({
                 'movie_id': row['movie_id'],
                 'overview': details.get('overview', ''),
-                'poster_url': get_poster_url(details.get('poster_path')),
+                'poster_url': get_poster_url(details.get('poster_path')) or get_placeholder_poster(row['movie_id'], row['title']),
                 'backdrop_url': get_poster_url(details.get('backdrop_path'), size='w1280')
             })
         else:
             tmdb_data.append({
                 'movie_id': row['movie_id'],
                 'overview': '',
-                'poster_url': None,
+                'poster_url': get_placeholder_poster(row['movie_id'], row['title']),
                 'backdrop_url': None
             })
 
