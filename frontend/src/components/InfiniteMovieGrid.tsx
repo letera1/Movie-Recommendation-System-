@@ -37,7 +37,7 @@ export default function InfiniteMovieGrid({ title, queryFn }: InfiniteMovieGridP
 
       {!hasMore && items.length > 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">You've reached the end of the list.</p>
+          <p className="text-slate-400">You&apos;ve reached the end of the list.</p>
         </div>
       )}
     </div>

@@ -23,17 +23,24 @@ export default function SearchPage() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-white mb-6">
-        Search Results for <span className="text-rose-400">"{query}"</span>
-      </h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <GenreFilter selectedGenre={genre} onGenreChange={setGenre} />
-        <YearFilter selectedYear={year} onYearChange={setYear} />
-      </div>
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section className="rounded-3xl border border-cyan-300/20 bg-slate-900/70 p-6 shadow-xl shadow-cyan-500/5 backdrop-blur-sm">
+        <h1 className="text-3xl font-bold text-white md:text-4xl">
+          Search Results for <span className="text-cyan-300">&ldquo;{query}&rdquo;</span>
+        </h1>
+        <p className="mt-2 text-sm text-slate-300">
+          Refine your search by genre and year to get sharper recommendations.
+        </p>
 
-      <InfiniteMovieGrid key={`${query}-${genre}-${year}`} title="" queryFn={queryFn} />
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <GenreFilter selectedGenre={genre} onGenreChange={setGenre} />
+          <YearFilter selectedYear={year} onYearChange={setYear} />
+        </div>
+      </section>
+
+      <div className="mt-8">
+        <InfiniteMovieGrid key={`${query}-${genre}-${year}`} title="Matching Movies" queryFn={queryFn} />
+      </div>
     </main>
   );
 }

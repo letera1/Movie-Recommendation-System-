@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface InfiniteQueryOptions<T> {
   queryFn: (page: number) => Promise<{ items: T[]; hasMore: boolean; total: number; }>;
@@ -16,6 +16,7 @@ export function useInfiniteQuery<T>({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [total, setTotal] = useState(0);
+  const hasRequestedInitialPage = useRef(false);
 
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -37,8 +38,11 @@ export function useInfiniteQuery<T>({
   }, [isLoading, hasMore, page, queryFn]);
 
   useEffect(() => {
-    loadMore();
-  }, []); // Initial load
+    if (!hasRequestedInitialPage.current) {
+      hasRequestedInitialPage.current = true;
+      loadMore();
+    }
+  }, [loadMore]);
 
   return { items, isLoading, error, hasMore, total, loadMore };
 }
