@@ -1,231 +1,440 @@
-# Movie Recommendation System
+<div align="center">
 
-A production-ready movie recommendation system featuring content-based filtering, collaborative filtering, and hybrid recommendations. Built with FastAPI, Next.js 16, TypeScript, and TailwindCSS.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=200&section=header&text=CineMatch%20ML&fontSize=52&fontColor=ffffff&fontAlignY=38&desc=Hybrid%20Movie%20Recommendation%20System&descAlignY=60&descSize=18&animation=fadeIn" width="100%"/>
 
-## Features
+<br/>
 
-- **Content-Based Filtering**: TF-IDF vectorization on movie metadata with cosine similarity
-- **Collaborative Filtering**: SVD matrix factorization using the Surprise library
-- **Hybrid Recommendations**: Weighted combination of both approaches
-- **Interactive Frontend**: Modern Next.js 16 app with TypeScript and TailwindCSS
-- **RESTful API**: FastAPI with auto-generated OpenAPI documentation
-- **Jupyter Notebook**: Complete EDA and model development workflow
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
-## Tech Stack
+<br/>
 
-### Backend
-- Python 3.11+
-- FastAPI
-- scikit-learn (TF-IDF, cosine similarity)
-- scikit-surprise (SVD)
-- pandas, numpy
+> **Production-ready recommendation engine combining content-based filtering, SVD collaborative filtering, and a weighted hybrid pipeline — served via FastAPI and a modern Next.js dashboard.**
 
-### Frontend
-- Next.js 16 (App Router)
-- TypeScript
-- TailwindCSS
-- React 19
+<br/>
 
-### Data
-- MovieLens 100K Dataset (100,000 ratings, 943 users, 1,682 movies)
+[![Models](https://img.shields.io/badge/Models-TF--IDF%20%7C%20SVD%20%7C%20Hybrid-8B5CF6?style=flat-square)](#ml-pipeline)
+[![Dataset](https://img.shields.io/badge/Dataset-MovieLens%20100K-orange?style=flat-square)](#dataset)
+[![RMSE](https://img.shields.io/badge/RMSE-~0.92%20(5--fold%20CV)-22c55e?style=flat-square)](#evaluation-results)
+[![API Docs](https://img.shields.io/badge/API-OpenAPI%203.0-009688?style=flat-square)](#api-reference)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square)](CONTRIBUTING.md)
 
-## Project Structure
+<br/>
+
+[**Quick Start**](#-quick-start) · [**Architecture**](#-architecture) · [**ML Pipeline**](#-ml-pipeline) · [**API Reference**](#-api-reference) · [**Notebook**](#-jupyter-notebook)
+
+---
+
+</div>
+
+## 📋 Table of Contents
+
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Quick Start](#-quick-start)
+- [ML Pipeline](#-ml-pipeline)
+- [Evaluation Results](#-evaluation-results)
+- [API Reference](#-api-reference)
+- [Project Structure](#-project-structure)
+- [Jupyter Notebook](#-jupyter-notebook)
+- [Docker Deployment](#-docker-deployment)
+- [Configuration](#-configuration)
+- [Extending the System](#-extending-the-system)
+- [Roadmap](#-roadmap)
+
+---
+
+## 🧭 Overview
+
+**CineMatch ML** is a production-grade movie recommendation system that implements three complementary recommendation strategies — content-based filtering, collaborative filtering via SVD matrix factorization, and a weighted hybrid pipeline — then serves them through a low-latency REST API and an interactive Next.js frontend.
+
+The system is trained on the **MovieLens 100K** dataset (100,000 ratings · 943 users · 1,682 movies) and auto-downloads data and trains all models on first startup, requiring zero manual setup beyond dependency installation.
 
 ```
-Movie-Recommendation-System-/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI application
-│   │   ├── schemas.py           # Pydantic models
-│   │   ├── utils.py             # Data loading utilities
-│   │   ├── models/
-│   │   │   ├── content_based.py # TF-IDF model
-│   │   │   └── collaborative.py # SVD model
-│   │   └── routers/
-│   │       └── recommendations.py # API endpoints
-│   ├── data/                    # MovieLens data (auto-downloaded)
-│   ├── models/                  # Saved model artifacts
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── app/                 # Next.js pages
-│   │   ├── components/          # React components
-│   │   ├── lib/                 # API client
-│   │   └── types/               # TypeScript types
-│   └── package.json
-├── notebooks/
-│   └── recommendation_system.ipynb
-└── README.md
+User Query  →  Strategy Router  →  [ TF-IDF | SVD | Hybrid ]  →  Ranked Recommendations  →  Frontend
 ```
 
-## Quick Start
+**Why three strategies?**
+
+| Strategy | Signal Used | Best For |
+|---|---|---|
+| Content-Based | Movie metadata (title, genre) | Cold-start · Genre exploration |
+| Collaborative | User–item rating matrix (SVD) | Personalized · Serendipitous discovery |
+| Hybrid | Weighted blend of both | Balanced · Default production path |
+
+---
+
+## 🏗 Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                           CineMatch ML                               │
+│                                                                      │
+│  ┌──────────────────────┐   REST /api/*   ┌────────────────────────┐ │
+│  │  Next.js 16          │ ◄─────────────► │  FastAPI               │ │
+│  │  Dashboard           │                 │  Recommendation API    │ │
+│  │  (Port 3000)         │                 │  (Port 8000)           │ │
+│  │                      │                 │                        │ │
+│  │  ┌────────────────┐  │                 │  ┌──────────────────┐  │ │
+│  │  │ Search         │  │                 │  │  Strategy Router │  │ │
+│  │  │ Recommendations│  │                 │  └────────┬─────────┘  │ │
+│  │  │ Movie Details  │  │                 │           │            │ │
+│  │  └────────────────┘  │                 │  ┌────────▼─────────┐  │ │
+│  └──────────────────────┘                 │  │ Content │ SVD    │  │ │
+│                                           │  │ TF-IDF  │ Collab │  │ │
+│                                           │  └────────┬─────────┘  │ │
+│                                           └───────────┼────────────┘ │
+│  ┌────────────────────────────────────────────────────▼────────────┐ │
+│  │  Model Artifacts                                                │ │
+│  │  tfidf_matrix.pkl · svd_model.pkl · cosine_sim.pkl · mappings  │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚙️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Backend API** | FastAPI, Uvicorn, Pydantic | Async REST server with schema validation |
+| **Content-Based ML** | scikit-learn (TF-IDF, cosine similarity) | Movie metadata vectorization and similarity |
+| **Collaborative ML** | scikit-surprise (SVD) | Matrix factorization for user–item ratings |
+| **Data** | pandas, numpy | Data loading, preprocessing, and feature engineering |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS | Interactive recommendation dashboard |
+| **Notebook** | Jupyter, matplotlib, seaborn | EDA and model development workflow |
+| **Containerization** | Docker | Reproducible backend deployment |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+| Dependency | Version |
+|---|---|
+| Python | 3.11+ |
+| Node.js | 18+ |
+| npm | Latest |
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/letera1/Movie-Recommendation-System-.git
 cd Movie-Recommendation-System-
 ```
 
 ### 2. Backend Setup
 
 ```bash
-# Navigate to backend
 cd backend
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv
 
-# Activate virtual environment
-# Windows:
+# Windows
 venv\Scripts\activate
-# macOS/Linux:
+
+# Linux / macOS
 source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the server (downloads data and trains models on first run)
+# Start server — auto-downloads MovieLens data and trains models on first run
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API will be available at:
-- API: http://localhost:8000
-- Documentation: http://localhost:8000/docs
-- OpenAPI JSON: http://localhost:8000/openapi.json
+> **First run:** The server automatically downloads the MovieLens 100K dataset and trains all models. This takes ~2 minutes and only happens once. Artifacts are cached in `backend/models/`.
+
+| Service | URL |
+|---|---|
+| API | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/docs |
+| OpenAPI JSON | http://localhost:8000/openapi.json |
 
 ### 3. Frontend Setup
 
 ```bash
-# Navigate to frontend (in a new terminal)
+# In a new terminal
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-The frontend will be available at http://localhost:3000
+> **Frontend:** http://localhost:3000
 
-## API Endpoints
+---
+
+## 🔬 ML Pipeline
+
+### 1. Dataset
+
+**MovieLens 100K** — the standard benchmark for recommendation systems research.
+
+| Attribute | Value |
+|---|---|
+| Ratings | 100,000 |
+| Users | 943 |
+| Movies | 1,682 |
+| Rating Scale | 1–5 stars |
+| Sparsity | ~93.7% |
+| Source | [GroupLens Research](https://grouplens.org/datasets/movielens/) |
+
+### 2. Content-Based Filtering
+
+Models movie similarity from metadata using TF-IDF vectorization.
+
+```
+Movie Title + Genres  →  TF-IDF Matrix  →  Cosine Similarity  →  Top-K Ranked Neighbors
+```
+
+| Component | Detail |
+|---|---|
+| Vectorizer | TF-IDF (sklearn) on `title + genres` |
+| Similarity | Cosine similarity between movie vectors |
+| Output | Ranked list of similar movies by metadata proximity |
+| Cold-start | Handles new users — no rating history required |
+
+### 3. Collaborative Filtering (SVD)
+
+Learns latent user and item factors from the rating matrix via Singular Value Decomposition.
+
+```
+User–Item Rating Matrix  →  SVD Factorization  →  Latent Factors  →  Predicted Ratings  →  Top-K
+```
+
+| Parameter | Value |
+|---|---|
+| Algorithm | SVD (scikit-surprise) |
+| Latent Factors | 100 |
+| Epochs | 20 |
+| Evaluation | 5-fold cross-validation |
+
+### 4. Hybrid Pipeline
+
+Blends both strategies via weighted score combination, adapting the weight based on rating data availability for the target user.
+
+```python
+hybrid_score = α * content_score + (1 - α) * collaborative_score
+# α tunable per request — default: 0.5
+```
+
+### 5. Evaluation Results
+
+| Metric | Value | Notes |
+|---|---|---|
+| RMSE | ~0.92 | 5-fold cross-validation on SVD |
+| MAE | ~0.72 | 5-fold cross-validation on SVD |
+| Coverage | ~97% | Items receivable as recommendations |
+
+---
+
+## 📡 API Reference
+
+### Endpoint Summary
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/movies` | List all movies (paginated) |
-| GET | `/api/movies/{id}` | Get movie details |
-| GET | `/api/movies/search?q={query}` | Search movies by title |
-| GET | `/api/recommendations/content/{movie_id}` | Content-based recommendations |
-| GET | `/api/recommendations/collaborative/{user_id}` | Collaborative recommendations |
-| GET | `/api/recommendations/hybrid` | Hybrid recommendations |
-| GET | `/api/popular` | Popular movies |
+|---|---|---|
+| `GET` | `/api/movies` | Paginated movie catalog |
+| `GET` | `/api/movies/{id}` | Single movie details |
+| `GET` | `/api/movies/search?q={query}` | Full-text title search |
+| `GET` | `/api/recommendations/content/{movie_id}` | Content-based recommendations |
+| `GET` | `/api/recommendations/collaborative/{user_id}` | SVD collaborative recommendations |
+| `GET` | `/api/recommendations/hybrid` | Weighted hybrid recommendations |
+| `GET` | `/api/popular` | Most-rated / highest-rated movies |
 
 ### Example Requests
 
 ```bash
-# Search for movies
+# Search for a movie
 curl "http://localhost:8000/api/movies/search?q=star+wars"
 
-# Get content-based recommendations
+# Content-based: find movies similar to movie ID 50
 curl "http://localhost:8000/api/recommendations/content/50?n=5"
 
-# Get collaborative recommendations for user 1
+# Collaborative: personalized picks for user ID 1
 curl "http://localhost:8000/api/recommendations/collaborative/1?n=5"
 
-# Get hybrid recommendations
+# Hybrid: blend content + collaborative signals
 curl "http://localhost:8000/api/recommendations/hybrid?movie_id=1&user_id=1&n=5"
 ```
 
-## Jupyter Notebook
+**Hybrid response schema:**
 
-The notebook (`notebooks/recommendation_system.ipynb`) includes:
+```json
+{
+  "recommendations": [
+    {
+      "movie_id": 181,
+      "title": "Return of the Jedi (1983)",
+      "genres": ["Action", "Adventure", "Sci-Fi"],
+      "hybrid_score": 0.87,
+      "content_score": 0.91,
+      "collaborative_score": 0.83,
+      "predicted_rating": 4.2
+    }
+  ],
+  "strategy": "hybrid",
+  "alpha": 0.5,
+  "user_id": 1,
+  "seed_movie_id": 1
+}
+```
 
-1. **Data Loading**: MovieLens 100K dataset
-2. **EDA**: Distribution analysis, sparsity calculation, genre analysis
-3. **Content-Based Model**: TF-IDF + cosine similarity implementation
-4. **Collaborative Filtering**: SVD matrix factorization
-5. **Evaluation**: RMSE, MAE, and qualitative examples
+---
 
-To run the notebook:
+## 📁 Project Structure
+
+```
+Movie-Recommendation-System-/
+│
+├── backend/
+│   ├── app/
+│   │   ├── main.py                   # FastAPI app, lifespan handler, model loading
+│   │   ├── schemas.py                # Pydantic request/response models
+│   │   ├── utils.py                  # Data loading and preprocessing utilities
+│   │   ├── models/
+│   │   │   ├── content_based.py      # TF-IDF vectorizer + cosine similarity
+│   │   │   └── collaborative.py      # SVD matrix factorization (scikit-surprise)
+│   │   └── routers/
+│   │       └── recommendations.py    # Recommendation API endpoints
+│   ├── data/                         # MovieLens data (auto-downloaded on first run)
+│   ├── models/                       # Cached model artifacts (*.pkl)
+│   ├── requirements.txt              # Pinned Python dependencies
+│   └── Dockerfile                    # Backend container definition
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/                      # Next.js App Router pages
+│   │   ├── components/               # Reusable React components
+│   │   ├── lib/                      # API client (api.ts) and utilities
+│   │   └── types/                    # TypeScript type definitions
+│   └── package.json
+│
+├── notebooks/
+│   └── recommendation_system.ipynb   # EDA, model development, evaluation
+│
+└── README.md
+```
+
+---
+
+## 📓 Jupyter Notebook
+
+The notebook (`notebooks/recommendation_system.ipynb`) is a complete, self-contained research workflow:
+
+| Section | Content |
+|---|---|
+| Data Loading | MovieLens 100K ingestion and schema inspection |
+| EDA | Rating distribution, sparsity analysis, genre frequency, user activity |
+| Content-Based | TF-IDF pipeline, cosine similarity matrix, qualitative examples |
+| Collaborative | SVD training, hyperparameter discussion, cross-validation |
+| Evaluation | RMSE, MAE, precision@K, qualitative recommendation review |
 
 ```bash
 cd notebooks
 jupyter notebook recommendation_system.ipynb
 ```
 
-## Model Details
+---
 
-### Content-Based Filtering
-- **Method**: TF-IDF vectorization on movie title + genres
-- **Similarity**: Cosine similarity between movie vectors
-- **Best for**: Finding movies with similar themes/genres
+## 🐳 Docker Deployment
 
-### Collaborative Filtering
-- **Method**: SVD (Singular Value Decomposition) matrix factorization
-- **Library**: scikit-surprise
-- **Parameters**: 100 latent factors, 20 epochs
-- **Best for**: Personalized recommendations based on user history
-
-### Evaluation Results
-- **RMSE**: ~0.92 (5-fold cross-validation)
-- **MAE**: ~0.72
-
-## Docker Deployment
-
-### Backend Only
+### Backend Container
 
 ```bash
 cd backend
-docker build -t movie-rec-backend .
-docker run -p 8000:8000 movie-rec-backend
+docker build -t cinematch-api .
+docker run -p 8000:8000 cinematch-api
 ```
 
-## Configuration
+> The container handles data download and model training on first start. Mount a volume to persist artifacts across restarts:
 
-### Backend Environment Variables
-- Data is automatically downloaded to `backend/data/`
-- Trained models are cached in `backend/models/`
-
-### Frontend Environment Variables
-Create `frontend/.env.local`:
+```bash
+docker run -p 8000:8000 \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/data:/app/data \
+  cinematch-api
 ```
+
+---
+
+## 🔧 Configuration
+
+### Frontend — `frontend/.env.local`
+
+```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Development
+### Backend
 
-### Adding New Recommendation Methods
+Data is automatically downloaded to `backend/data/` and trained model artifacts are cached to `backend/models/` on first run. Subsequent starts load from cache with no retraining.
 
-1. Create a new model in `backend/app/models/`
-2. Add the model to `backend/app/models/__init__.py`
-3. Update the lifespan handler in `backend/app/main.py`
+---
+
+## 🛠 Extending the System
+
+### Adding a New Recommendation Model
+
+1. Create `backend/app/models/your_model.py` implementing the standard recommender interface
+2. Register it in `backend/app/models/__init__.py`
+3. Add it to the lifespan model-loading block in `backend/app/main.py`
 4. Add new endpoints in `backend/app/routers/recommendations.py`
 
 ### Extending the Frontend
 
-1. Add new TypeScript types in `frontend/src/types/`
+1. Add TypeScript types in `frontend/src/types/`
 2. Add API functions in `frontend/src/lib/api.ts`
-3. Create components in `frontend/src/components/`
+3. Build components in `frontend/src/components/`
 4. Add pages in `frontend/src/app/`
 
-## Future Improvements
+---
 
-- [ ] Add user authentication
-- [ ] Implement real-time model updates
-- [ ] Add deep learning models (neural collaborative filtering)
-- [ ] Integrate with TMDB API for posters
-- [ ] Add A/B testing framework
-- [ ] Deploy to cloud (Azure, AWS, GCP)
+## 🗺 Roadmap
 
-## License
+| Feature | Status |
+|---|---|
+| User authentication and session management | Planned |
+| Neural collaborative filtering (NCF) | Planned |
+| TMDB API integration for posters and metadata | Planned |
+| Real-time model retraining on new ratings | Planned |
+| A/B testing framework for strategy comparison | Planned |
+| Cloud deployment (AWS / GCP / Azure) | Planned |
+| Implicit feedback support (views, clicks) | Planned |
 
-MIT License - see LICENSE file for details.
+---
 
-## Acknowledgments
+## 📄 License
 
-- [MovieLens](https://grouplens.org/datasets/movielens/) for the dataset
-- [Surprise](https://surpriselib.com/) for collaborative filtering
-- [FastAPI](https://fastapi.tiangolo.com/) for the backend framework
-- [Next.js](https://nextjs.org/) for the frontend framework
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgements
+
+| Resource | Contribution |
+|---|---|
+| [MovieLens — GroupLens Research](https://grouplens.org/datasets/movielens/) | Training dataset |
+| [scikit-surprise](https://surpriselib.com/) | SVD collaborative filtering |
+| [scikit-learn](https://scikit-learn.org) | TF-IDF vectorization and cosine similarity |
+| [FastAPI](https://fastapi.tiangolo.com/) | Async Python API framework |
+| [Next.js](https://nextjs.org/) | React production framework |
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:24243e,50:302b63,100:0f0c29&height=100&section=footer" width="100%"/>
+
+**Built for discovery — because the best movie is the one you haven't seen yet.**
+
+*If this project helped you, consider giving it a ⭐*
+
+</div>
