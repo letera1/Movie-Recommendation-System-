@@ -61,6 +61,75 @@ async def list_movies(
 
 from ..utils import GENRES
 
+
+def search_movies(
+    movies_df,
+    query: str = None,
+    genre: str = None,
+    year: int = None,
+    page: int = 1,
+    page_size: int = 20
+) -> dict:
+    """
+    Search and filter movies with pagination.
+    
+    Args:
+        movies_df: DataFrame containing movie data
+        query: Search query for title
+        genre: Filter by genre
+        year: Filter by year
+        page: Page number (1-indexed)
+        page_size: Number of results per page
+    
+    Returns:
+        Dictionary with results, pagination info
+    """
+    import re
+    
+    filtered = movies_df.copy()
+    
+    # Filter by title query
+    if query:
+        query_lower = query.lower()
+        filtered = filtered[filtered['title'].str.lower().str.contains(query_lower, na=False, regex=False)]
+    
+    # Filter by genre
+    if genre:
+        genre_lower = genre.lower()
+        filtered = filtered[filtered['genres'].apply(
+            lambda g: any(genre_lower in x.lower() for x in g) if isinstance(g, list) else False
+        )]
+    
+    # Filter by year
+    if year:
+        filtered = filtered[filtered['year'] == year]
+    
+    total_results = len(filtered)
+    total_pages = max(1, (total_results + page_size - 1) // page_size)
+    
+    # Paginate
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    paginated = filtered.iloc[start_idx:end_idx]
+    
+    results = [
+        {
+            'id': int(row['movie_id']),
+            'title': row['title'],
+            'genres': row['genres'],
+            'year': row['year']
+        }
+        for _, row in paginated.iterrows()
+    ]
+    
+    return {
+        'results': results,
+        'total_results': total_results,
+        'page': page,
+        'total_pages': total_pages
+    }
+
+
 @router.get("/genres", response_model=List[str])
 async def get_genres():
     """Get a list of all available movie genres."""
