@@ -30,11 +30,13 @@ class Recommendation(BaseModel):
     """Recommendation result model."""
     movie: Movie
     score: float
+    method: str
 
 
 class RecommendationResponse(BaseModel):
     """API response for recommendations."""
     recommendations: List[Recommendation]
+    total: int
     method: str
 
 
@@ -50,7 +52,9 @@ class SearchResponse(BaseModel):
     """Search results response."""
     results: List[Movie]
     query: str
-    count: int
+    total_results: int
+    page: int
+    total_pages: int
 
 
 class PopularMoviesResponse(BaseModel):

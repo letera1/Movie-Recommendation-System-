@@ -5,8 +5,13 @@ This is the main entry point for the recommendation API.
 """
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI
+import os
+import time
+from collections import defaultdict, deque
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from .utils import load_movies, load_ratings, download_movielens_100k
 from .models import ContentBasedModel, CollaborativeModel
@@ -18,6 +23,38 @@ from .routers.recommendations import set_models
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
+
+
+def _bool_from_env(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _parse_csv_env(name: str, default: list[str]) -> list[str]:
+    value = os.getenv(name)
+    if not value:
+        return default
+    parsed = [item.strip() for item in value.split(",") if item.strip()]
+    return parsed or default
+
+
+ALLOWED_ORIGINS = _parse_csv_env(
+    "ALLOWED_ORIGINS",
+    [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://172.16.0.2:3000",
+    ],
+)
+ALLOWED_HOSTS = _parse_csv_env("ALLOWED_HOSTS", ["localhost", "127.0.0.1", "*.localhost"])
+RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "120"))
+RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
+ENABLE_DOCS = _bool_from_env("ENABLE_DOCS", default=True)
+
+# Simple in-memory rate limiter by client IP.
+_request_windows: dict[str, deque[float]] = defaultdict(deque)
 
 
 @asynccontextmanager
@@ -100,21 +137,57 @@ app = FastAPI(
     - `/api/popular` - Popular movies
     """,
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs" if ENABLE_DOCS else None,
+    redoc_url="/redoc" if ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if ENABLE_DOCS else None,
 )
+
+# Restrict accepted Host headers to reduce host header injection risk.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 
 # Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://172.16.0.2:3000"
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Add secure headers and apply a basic IP-based rate limit."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW_SECONDS
+
+    bucket = _request_windows[client_ip]
+    while bucket and bucket[0] < window_start:
+        bucket.popleft()
+
+    if len(bucket) >= RATE_LIMIT_REQUESTS:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests. Please try again later."},
+            headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
+        )
+
+    bucket.append(now)
+    response = await call_next(request)
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    return response
 
 # Include routers
 app.include_router(recommendations_router)

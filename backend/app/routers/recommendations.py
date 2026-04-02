@@ -85,8 +85,6 @@ def search_movies(
     Returns:
         Dictionary with results, pagination info
     """
-    import re
-    
     filtered = movies_df.copy()
     
     # Filter by title query
@@ -119,7 +117,9 @@ def search_movies(
             'title': row['title'],
             'genres': row['genres'],
             'year': row['year'],
-            'poster_url': row.get('poster_url')
+            'overview': row.get('overview'),
+            'poster_url': row.get('poster_url'),
+            'backdrop_url': row.get('backdrop_url')
         }
         for _, row in paginated.iterrows()
     ]
@@ -140,7 +140,8 @@ async def get_genres():
 
 @router.get("/movies/search", response_model=SearchResponse)
 async def search_movies_endpoint(
-    query: Optional[str] = Query(None, min_length=1, description="Search query"),
+    q: Optional[str] = Query(None, min_length=1, description="Search query"),
+    query: Optional[str] = Query(None, min_length=1, description="Search query (legacy)"),
     genre: Optional[str] = Query(None, description="Filter by genre"),
     year: Optional[int] = Query(None, description="Filter by year"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -149,10 +150,18 @@ async def search_movies_endpoint(
     """Search and filter movies with pagination."""
     if movies_df is None:
         raise HTTPException(status_code=503, detail="Data not loaded")
+
+    search_query = q or query
+
+    if genre and genre not in GENRES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid genre '{genre}'. Use /api/genres to list allowed values."
+        )
     
     search_results = search_movies(
         movies_df=movies_df,
-        query=query,
+        query=search_query,
         genre=genre,
         year=year,
         page=page,
@@ -161,8 +170,8 @@ async def search_movies_endpoint(
     
     return SearchResponse(
         results=[Movie(**m) for m in search_results['results']],
-        query=query or "",
-        count=search_results['total_results'],
+        query=search_query or "",
+        total_results=search_results['total_results'],
         page=search_results['page'],
         total_pages=search_results['total_pages']
     )
