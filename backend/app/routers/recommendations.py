@@ -46,7 +46,8 @@ async def list_movies(
             id=int(row['movie_id']),
             title=row['title'],
             genres=row['genres'],
-            year=row['year']
+            year=row['year'],
+            poster_url=row.get('poster_url')
         )
         for _, row in movies_slice.iterrows()
     ]
@@ -117,7 +118,8 @@ def search_movies(
             'id': int(row['movie_id']),
             'title': row['title'],
             'genres': row['genres'],
-            'year': row['year']
+            'year': row['year'],
+            'poster_url': row.get('poster_url')
         }
         for _, row in paginated.iterrows()
     ]
@@ -415,7 +417,8 @@ async def get_popular_movies(
                 'id': int(row['movie_id']),
                 'title': movie['title'],
                 'genres': movie['genres'],
-                'year': movie['year']
+                'year': movie['year'],
+                'poster_url': movie.get('poster_url')
             },
             'score': float(row['avg_rating']),
             'method': 'popular'
