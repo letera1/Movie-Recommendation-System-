@@ -13,14 +13,13 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
-from .utils import load_movies, load_ratings, download_movielens_100k
-from .models import ContentBasedModel, CollaborativeModel
-from .routers import recommendations_router
-from .routers.recommendations import set_models
-
+from src.data.utils import load_movies, load_ratings, download_movielens_100k
+from src.ml.models import ContentBasedModel, CollaborativeModel
+from src.api.routers import recommendations_router
+from src.api.routers.recommendations import set_models
 
 # Paths
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 
