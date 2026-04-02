@@ -2,13 +2,14 @@
 "use client";
 
 import { useState } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { searchMovies } from '@/lib/api';
 import InfiniteMovieGrid from '@/components/InfiniteMovieGrid';
 import GenreFilter from '@/components/GenreFilter';
 import YearFilter from '@/components/YearFilter';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [genre, setGenre] = useState<string | null>(null);
@@ -42,5 +43,21 @@ export default function SearchPage() {
         <InfiniteMovieGrid key={`${query}-${genre}-${year}`} title="Matching Movies" queryFn={queryFn} />
       </div>
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <section className="rounded-3xl border border-cyan-300/20 bg-slate-900/70 p-6 shadow-xl shadow-cyan-500/5 backdrop-blur-sm">
+            <p className="text-slate-300">Loading search experience...</p>
+          </section>
+        </main>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }

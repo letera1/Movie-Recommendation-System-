@@ -21,6 +21,11 @@ COPY . .
 # Create data and models directories
 RUN mkdir -p data models
 
+# Use non-root user at runtime.
+RUN addgroup --system app && adduser --system --ingroup app app \
+    && chown -R app:app /app
+USER app
+
 # Expose port
 EXPOSE 8000
 
