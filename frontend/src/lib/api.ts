@@ -58,10 +58,25 @@ export async function getMovies(
 export async function searchMovies(
   query: string,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
+  genre: string | null = null,
+  year: number | null = null
 ): Promise<SearchResponse> {
+  const params = new URLSearchParams({
+    q: query,
+    page: page.toString(),
+    page_size: pageSize.toString(),
+  });
+
+  if (genre) {
+    params.append('genre', genre);
+  }
+  if (year) {
+    params.append('year', year.toString());
+  }
+
   return fetchAPI<SearchResponse>(
-    `/api/movies/search?q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`
+    `/api/movies/search?${params.toString()}`
   );
 }
 
