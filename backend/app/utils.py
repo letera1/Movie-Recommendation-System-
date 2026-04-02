@@ -6,9 +6,10 @@ import re
 import zipfile
 import requests
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
+
 from pathlib import Path
+from .services.tmdb import get_movie_details, get_poster_url
 
 
 # Constants
@@ -57,7 +58,7 @@ def download_movielens_100k() -> Path:
 
 def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
     """
-    Load and preprocess the movies dataset.
+    Load and preprocess the movies dataset, augmenting with TMDB data.
     
     Args:
         data_path: Path to ml-100k directory. If None, downloads the dataset.
@@ -79,6 +80,33 @@ def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
         encoding='latin-1'
     )
     
+    # --- Augment with TMDB Data ---
+    print("Augmenting movie data with TMDB details...")
+    tmdb_data = []
+    for _, row in movies_df.iterrows():
+        # Clean title for better search results
+        clean_title = re.sub(r'\s*\(\d{4}\)$', '', row['title']).strip()
+        details = get_movie_details(clean_title)
+        
+        if details:
+            tmdb_data.append({
+                'movie_id': row['movie_id'],
+                'overview': details.get('overview', ''),
+                'poster_url': get_poster_url(details.get('poster_path')),
+                'backdrop_url': get_poster_url(details.get('backdrop_path'), size='w1280')
+            })
+        else:
+            tmdb_data.append({
+                'movie_id': row['movie_id'],
+                'overview': '',
+                'poster_url': None,
+                'backdrop_url': None
+            })
+
+    tmdb_df = pd.DataFrame(tmdb_data)
+    movies_df = pd.merge(movies_df, tmdb_df, on='movie_id')
+    # --- End Augmentation ---
+
     # Extract year from title (format: "Movie Name (YYYY)")
     movies_df['year'] = movies_df['title'].apply(extract_year_from_title)
     
@@ -89,8 +117,9 @@ def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
     )
     
     # Create content string for TF-IDF
+    # Now includes overview for richer content
     movies_df['content'] = movies_df.apply(
-        lambda row: f"{row['title']} {' '.join(row['genres'])}",
+        lambda row: f"{row['title']} {' '.join(row['genres'])} {row['overview']}",
         axis=1
     )
     
@@ -129,60 +158,6 @@ def load_ratings(data_path: Optional[Path] = None) -> pd.DataFrame:
     return ratings_df
 
 
-def load_users(data_path: Optional[Path] = None) -> pd.DataFrame:
-    """
-    Load the users dataset.
-    
-    Args:
-        data_path: Path to ml-100k directory. If None, downloads the dataset.
-    
-    Returns:
-        DataFrame with user information.
-    """
-    if data_path is None:
-        data_path = download_movielens_100k()
-    
-    columns = ['user_id', 'age', 'gender', 'occupation', 'zip_code']
-    
-    users_df = pd.read_csv(
-        data_path / "u.user",
-        sep='|',
-        names=columns
-    )
-    
-    return users_df
-
-
-def compute_statistics(ratings_df: pd.DataFrame, movies_df: pd.DataFrame) -> Dict:
-    """
-    Compute dataset statistics.
-    
-    Returns:
-        Dictionary with various statistics.
-    """
-    n_users = ratings_df['user_id'].nunique()
-    n_movies = ratings_df['movie_id'].nunique()
-    n_ratings = len(ratings_df)
-    sparsity = 1 - (n_ratings / (n_users * n_movies))
-    
-    # Rating statistics
-    rating_stats = ratings_df['rating'].describe().to_dict()
-    
-    # Most rated movies
-    movie_counts = ratings_df.groupby('movie_id').size().reset_index(name='count')
-    movie_counts = movie_counts.merge(movies_df[['movie_id', 'title']], on='movie_id')
-    top_movies = movie_counts.nlargest(10, 'count')[['title', 'count']].to_dict('records')
-    
-    return {
-        'n_users': n_users,
-        'n_movies': n_movies,
-        'n_ratings': n_ratings,
-        'sparsity': sparsity,
-        'rating_stats': rating_stats,
-        'top_movies': top_movies
-    }
-
-
 def get_popular_movies(
     ratings_df: pd.DataFrame, 
     movies_df: pd.DataFrame, 
@@ -214,30 +189,23 @@ def get_popular_movies(
     movie_stats = movie_stats.nlargest(n, 'avg_rating')
     
     # Merge with movie info
-    popular = movie_stats.merge(movies_df[['movie_id', 'title', 'genres', 'year']], on='movie_id')
+    popular = movie_stats.merge(movies_df, on='movie_id')
     
-    return popular.to_dict('records')
-
-
-def create_user_item_matrix(ratings_df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict, Dict]:
-    """
-    Create user-item interaction matrix.
-    
-    Returns:
-        Tuple of (matrix, user_id_to_idx, movie_id_to_idx)
-    """
-    # Create pivot table
-    matrix = ratings_df.pivot(
-        index='user_id', 
-        columns='movie_id', 
-        values='rating'
-    ).fillna(0)
-    
-    # Create mappings
-    user_id_to_idx = {uid: idx for idx, uid in enumerate(matrix.index)}
-    movie_id_to_idx = {mid: idx for idx, mid in enumerate(matrix.columns)}
-    
-    return matrix, user_id_to_idx, movie_id_to_idx
+    # Select and format columns for the response
+    popular_movies = []
+    for _, row in popular.iterrows():
+        popular_movies.append({
+            'id': int(row['movie_id']),
+            'title': row['title'],
+            'genres': row['genres'],
+            'year': row['year'],
+            'overview': row['overview'],
+            'poster_url': row['poster_url'],
+            'avg_rating': row['avg_rating'],
+            'rating_count': int(row['rating_count'])
+        })
+        
+    return popular_movies
 
 
 def search_movies(movies_df: pd.DataFrame, query: str, limit: int = 20) -> List[Dict]:
@@ -261,7 +229,9 @@ def search_movies(movies_df: pd.DataFrame, query: str, limit: int = 20) -> List[
             'id': int(row['movie_id']),
             'title': row['title'],
             'genres': row['genres'],
-            'year': row['year']
+            'year': row['year'],
+            'overview': row['overview'],
+            'poster_url': row['poster_url'],
         }
         for _, row in results.iterrows()
     ]
