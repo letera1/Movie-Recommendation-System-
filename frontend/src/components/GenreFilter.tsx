@@ -29,10 +29,10 @@ export default function GenreFilter({ selectedGenre, onGenreChange }: GenreFilte
       <select
         value={selectedGenre || 'All Genres'}
         onChange={(e) => onGenreChange(e.target.value === 'All Genres' ? null : e.target.value)}
-        className="w-full px-4 py-3 text-white bg-gray-800 border-2 border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+        className="w-full rounded-xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-300/45 transition-all"
       >
         {genres.map((genre) => (
-          <option key={genre} value={genre} className="bg-gray-800 text-white">
+          <option key={genre} value={genre} className="bg-slate-900 text-white">
             {genre}
           </option>
         ))}
