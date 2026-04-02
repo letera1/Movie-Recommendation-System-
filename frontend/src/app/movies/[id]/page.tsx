@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MovieGrid, SearchBar } from "@/components";
 import { getMovie, getContentRecommendations, getCollaborativeRecommendations } from "@/lib/api";
 import type { MovieDetail, Recommendation } from "@/types";
@@ -102,9 +103,9 @@ export default function MovieDetailPage({
     <div className="min-h-screen">
       {/* Movie Header */}
       <section
-        className={`bg-gradient-to-br ${
+        className={`bg-linear-to-br ${
           movie ? getGradientColors(movie.title) : "from-gray-400 to-gray-600"
-        }`}
+        } shadow-xl`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Breadcrumb */}
@@ -143,14 +144,26 @@ export default function MovieDetailPage({
             <div className="grid md:grid-cols-3 gap-8">
               {/* Poster */}
               <div className="md:col-span-1">
-                <div className="aspect-[2/3] bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <svg
-                    className="w-24 h-24 text-white/30"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
-                  </svg>
+                <div className="relative aspect-2/3 overflow-hidden rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm">
+                  {movie.poster_url ? (
+                    <Image
+                      src={movie.poster_url}
+                      alt={movie.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 80vw, 30vw"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <svg
+                        className="w-24 h-24 text-white/30"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -211,6 +224,12 @@ export default function MovieDetailPage({
                   </div>
                 </div>
 
+                {movie.overview && (
+                  <p className="max-w-2xl text-sm leading-relaxed text-white/90">
+                    {movie.overview}
+                  </p>
+                )}
+
                 {/* IMDB Link */}
                 {movie.imdb_url && (
                   <a
@@ -251,14 +270,14 @@ export default function MovieDetailPage({
 
           {/* Recommendation Type Toggle */}
           <div className="flex items-center gap-4 mb-6">
-            <span className="text-gray-600 font-medium">Recommendations:</span>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+            <span className="text-slate-300 font-medium">Recommendations:</span>
+            <div className="flex rounded-lg overflow-hidden border border-cyan-300/25">
               <button
                 onClick={() => setRecType("content")}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   recType === "content"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-cyan-500 text-slate-950"
+                    : "bg-slate-900 text-slate-300 hover:bg-slate-800"
                 }`}
               >
                 Similar Movies
@@ -267,8 +286,8 @@ export default function MovieDetailPage({
                 onClick={() => setRecType("collaborative")}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   recType === "collaborative"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-cyan-500 text-slate-950"
+                    : "bg-slate-900 text-slate-300 hover:bg-slate-800"
                 }`}
               >
                 For You (User 1)

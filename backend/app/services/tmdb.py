@@ -9,7 +9,7 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_API_URL = "https://api.themoviedb.org/3"
 
 def get_movie_details(movie_title: str):
-    if not TMDB_API_KEY or TMDB_API_KEY == "your_tmdb_api_key":
+    if not TMDB_API_KEY or TMDB_API_KEY.startswith("your_tmdb_api_key"):
         return None
         
     search_url = f"{TMDB_API_URL}/search/movie"
