@@ -2,7 +2,6 @@
  * API Client for Movie Recommendation System
  */
 import type {
-  Movie,
   MovieDetail,
   RecommendationResponse,
   MovieListResponse,
@@ -16,10 +15,14 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
  */
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
 
   try {
     const response = await fetch(url, {
       ...options,
+      cache: "no-store",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...options?.headers,
@@ -33,10 +36,15 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
     return response.json();
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Request timeout. Please try again.");
+    }
     if (error instanceof Error) {
       throw error;
     }
     throw new Error("Network error occurred");
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

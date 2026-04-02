@@ -5,6 +5,9 @@ export interface Movie {
   title: string;
   genres: string[];
   year: number | null;
+  overview?: string | null;
+  poster_url?: string | null;
+  backdrop_url?: string | null;
 }
 
 export interface MovieDetail extends Movie {
@@ -35,7 +38,9 @@ export interface MovieListResponse {
 export interface SearchResponse {
   results: Movie[];
   query: string;
-  total: number;
+  total_results: number;
+  page: number;
+  total_pages: number;
 }
 
 export interface APIError {
