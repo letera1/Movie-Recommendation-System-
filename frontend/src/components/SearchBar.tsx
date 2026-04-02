@@ -29,11 +29,11 @@ export default function SearchBar({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-6 py-4 text-lg text-white placeholder-gray-400 bg-gray-800 border-2 border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+        className="w-full rounded-full border border-cyan-300/30 bg-slate-900/80 px-6 py-4 text-lg text-white placeholder-slate-400 shadow-lg shadow-cyan-950/30 transition-all focus:border-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300/45"
       />
       <button
         type="submit"
-        className="absolute inset-y-0 right-0 flex items-center px-6 text-gray-400 hover:text-white transition-colors"
+        className="absolute inset-y-0 right-0 flex items-center px-6 text-slate-400 transition-colors hover:text-cyan-200"
         aria-label="Search"
       >
         <svg
