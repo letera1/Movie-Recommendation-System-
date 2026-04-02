@@ -208,23 +208,51 @@ def get_popular_movies(
     return popular_movies
 
 
-def search_movies(movies_df: pd.DataFrame, query: str, limit: int = 20) -> List[Dict]:
+def search_movies(
+    movies_df: pd.DataFrame, 
+    query: Optional[str] = None,
+    genre: Optional[str] = None,
+    year: Optional[int] = None,
+    page: int = 1,
+    page_size: int = 20
+) -> Dict:
     """
-    Search movies by title.
+    Search and filter movies with pagination.
     
     Args:
         movies_df: Movies DataFrame.
         query: Search query string.
-        limit: Maximum number of results.
+        genre: Genre to filter by.
+        year: Year to filter by.
+        page: Page number for pagination.
+        page_size: Number of results per page.
     
     Returns:
-        List of matching movies.
+        Dictionary with paginated movie results.
     """
-    query_lower = query.lower()
-    mask = movies_df['title'].str.lower().str.contains(query_lower, na=False)
-    results = movies_df[mask].head(limit)
-    
-    return [
+    results_df = movies_df.copy()
+
+    # 1. Filter by query
+    if query:
+        query_lower = query.lower()
+        results_df = results_df[results_df['title'].str.lower().str.contains(query_lower, na=False)]
+
+    # 2. Filter by genre
+    if genre:
+        results_df = results_df[results_df['genres'].apply(lambda g: genre in g)]
+
+    # 3. Filter by year
+    if year:
+        results_df = results_df[results_df['year'] == year]
+
+    # 4. Paginate results
+    total_results = len(results_df)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    paginated_results = results_df.iloc[start_idx:end_idx]
+
+    # 5. Format output
+    movies_list = [
         {
             'id': int(row['movie_id']),
             'title': row['title'],
@@ -233,5 +261,12 @@ def search_movies(movies_df: pd.DataFrame, query: str, limit: int = 20) -> List[
             'overview': row['overview'],
             'poster_url': row['poster_url'],
         }
-        for _, row in results.iterrows()
+        for _, row in paginated_results.iterrows()
     ]
+    
+    return {
+        'results': movies_list,
+        'total_results': total_results,
+        'page': page,
+        'total_pages': (total_results + page_size - 1) // page_size
+    }
