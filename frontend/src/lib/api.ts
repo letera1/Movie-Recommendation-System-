@@ -53,14 +53,15 @@ export async function getMovies(
 }
 
 /**
- * Search movies by title
+ * Search movies by title with pagination
  */
 export async function searchMovies(
   query: string,
-  limit: number = 20
+  page: number = 1,
+  pageSize: number = 20
 ): Promise<SearchResponse> {
   return fetchAPI<SearchResponse>(
-    `/api/movies/search?q=${encodeURIComponent(query)}&limit=${limit}`
+    `/api/movies/search?q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`
   );
 }
 
