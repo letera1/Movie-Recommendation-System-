@@ -81,9 +81,20 @@ def load_movies(data_path: Optional[Path] = None) -> pd.DataFrame:
     )
     
     # --- Augment with TMDB Data ---
-    print("Augmenting movie data with TMDB details...")
+    print("Augmenting movie data with TMDB details (limited to first 50 for performance)...")
     tmdb_data = []
-    for _, row in movies_df.iterrows():
+    # For performance, we only augment the first 50 movies during startup.
+    # In a real production system, this would be cached or pre-computed.
+    for i, (_, row) in enumerate(movies_df.iterrows()):
+        if i >= 50:
+            tmdb_data.append({
+                'movie_id': row['movie_id'],
+                'overview': '',
+                'poster_url': None,
+                'backdrop_url': None
+            })
+            continue
+
         # Clean title for better search results
         clean_title = re.sub(r'\s*\(\d{4}\)$', '', row['title']).strip()
         details = get_movie_details(clean_title)
