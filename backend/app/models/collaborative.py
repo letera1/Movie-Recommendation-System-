@@ -154,7 +154,10 @@ class CollaborativeModel:
                     'id': int(movie_id),
                     'title': movie_row['title'],
                     'genres': movie_row['genres'],
-                    'year': movie_row['year']
+                    'year': movie_row['year'],
+                    'overview': movie_row.get('overview'),
+                    'poster_url': movie_row.get('poster_url'),
+                    'backdrop_url': movie_row.get('backdrop_url'),
                 },
                 'score': float(predicted_rating),
                 'method': 'collaborative'
@@ -199,7 +202,10 @@ class CollaborativeModel:
                     'id': int(row['movie_id']),
                     'title': movie_row['title'],
                     'genres': movie_row['genres'],
-                    'year': movie_row['year']
+                    'year': movie_row['year'],
+                    'overview': movie_row.get('overview'),
+                    'poster_url': movie_row.get('poster_url'),
+                    'backdrop_url': movie_row.get('backdrop_url'),
                 },
                 'score': float(row['avg_rating']),
                 'method': 'collaborative_fallback'

@@ -47,7 +47,9 @@ async def list_movies(
             title=row['title'],
             genres=row['genres'],
             year=row['year'],
-            poster_url=row.get('poster_url')
+            overview=row.get('overview'),
+            poster_url=row.get('poster_url'),
+            backdrop_url=row.get('backdrop_url')
         )
         for _, row in movies_slice.iterrows()
     ]
@@ -200,6 +202,9 @@ async def get_movie(movie_id: int):
         title=movie['title'],
         genres=movie['genres'],
         year=movie['year'],
+        overview=movie.get('overview'),
+        poster_url=movie.get('poster_url'),
+        backdrop_url=movie.get('backdrop_url'),
         imdb_url=movie.get('imdb_url'),
         rating_count=rating_count,
         avg_rating=round(avg_rating, 2) if avg_rating else None
@@ -427,6 +432,7 @@ async def get_popular_movies(
                 'title': movie['title'],
                 'genres': movie['genres'],
                 'year': movie['year'],
+                'overview': movie.get('overview'),
                 'poster_url': movie.get('poster_url')
             },
             'score': float(row['avg_rating']),

@@ -113,7 +113,10 @@ class ContentBasedModel:
                     'id': int(sim_movie_id),
                     'title': movie_row['title'],
                     'genres': movie_row['genres'],
-                    'year': movie_row['year']
+                    'year': movie_row['year'],
+                    'overview': movie_row.get('overview'),
+                    'poster_url': movie_row.get('poster_url'),
+                    'backdrop_url': movie_row.get('backdrop_url'),
                 },
                 'score': float(similarities[sim_idx]),
                 'method': 'content'
@@ -141,7 +144,10 @@ class ContentBasedModel:
                     'id': int(row['movie_id']),
                     'title': row['title'],
                     'genres': row['genres'],
-                    'year': row['year']
+                    'year': row['year'],
+                    'overview': row.get('overview'),
+                    'poster_url': row.get('poster_url'),
+                    'backdrop_url': row.get('backdrop_url'),
                 },
                 'score': 0.0,
                 'method': 'content_fallback'
@@ -210,7 +216,10 @@ class ContentBasedModel:
                     'id': int(sim_movie_id),
                     'title': movie_row['title'],
                     'genres': movie_row['genres'],
-                    'year': movie_row['year']
+                    'year': movie_row['year'],
+                    'overview': movie_row.get('overview'),
+                    'poster_url': movie_row.get('poster_url'),
+                    'backdrop_url': movie_row.get('backdrop_url'),
                 },
                 'score': float(avg_similarities[sim_idx]),
                 'method': 'content'
