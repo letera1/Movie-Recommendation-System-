@@ -1,0 +1,76 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cinematch-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    volumes:
+      - backend_models:/app/models
+      - backend_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - cinematch-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cinematch-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cinematch-network
+
+  # Optional: Database for future user auth & rating storage
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: cinematch-postgres
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     POSTGRES_DB: cinematch
+  #     POSTGRES_USER: cinematch
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cinematch_secret}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U cinematch"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+  #   networks:
+  #     - cinematch-network
+
+volumes:
+  backend_models:
+    driver: local
+  backend_data:
+    driver: local
+  # postgres_data:
+  #   driver: local
+
+networks:
+  cinematch-network:
+    driver: bridge
