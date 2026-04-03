@@ -1,0 +1,26 @@
+cff-format: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "CineMatch ML: Movie Recommendation System"
+type: software
+authors:
+  - family-names: "Tujo"
+    given-names: "Letera"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+version: 0.1.0
+date-released: 2026-04-03
+url: "https://github.com/your-org/Movie-Recommendation-System"
+repository-code: "https://github.com/your-org/Movie-Recommendation-System"
+license: MIT
+abstract: >-
+  A production-ready movie recommendation system with three strategies
+  (content-based TF-IDF, collaborative SVD, and hybrid), served via
+  FastAPI backend and a Next.js frontend dashboard. Trained on
+  MovieLens 100K dataset.
+keywords:
+  - "machine-learning"
+  - "recommendation-system"
+  - "fastapi"
+  - "nextjs"
+  - "tf-idf"
+  - "collaborative-filtering"
+  - "movielens"
