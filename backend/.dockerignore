@@ -1,0 +1,22 @@
+# Backend .dockerignore
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.*
+!.env.example
+venv
+.venv
+.git
+.gitignore
+*.md
+.DS_Store
+*.log
+.pytest_cache
+.mypy_cache
+htmlcov
+.coverage
+models/*/
+!models/.gitkeep
+data/ml-100k/
+!data/ml-100k/.gitkeep
