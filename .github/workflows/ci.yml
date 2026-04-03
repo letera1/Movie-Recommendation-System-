@@ -52,7 +52,7 @@ jobs:
           pytest tests/ -v --cov=src --cov-report=xml || true
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         if: always()
         with:
           files: backend/coverage.xml
