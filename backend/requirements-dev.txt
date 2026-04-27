@@ -11,7 +11,7 @@ httpx>=0.26.0  # Async test client for FastAPI
 
 # Linting & Formatting
 black>=24.0.0
-flake8>=7.0.0
+flake8>=7.3.0
 isort>=5.13.0
 mypy>=1.8.0
 pylint>=3.0.0
