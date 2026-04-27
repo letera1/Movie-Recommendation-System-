@@ -14,7 +14,7 @@ black>=24.0.0
 flake8>=7.0.0
 isort>=5.13.0
 mypy>=1.8.0
-pylint>=3.0.0
+pylint>=4.0.5
 
 # Type stubs
 types-requests
